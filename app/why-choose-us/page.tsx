@@ -36,13 +36,18 @@ export default function WhyChooseUsPage() {
     const ref = useRef<any>(null);
     const { scrollYProgress } = useScroll({
         container: ref,
-        offset: ['start start', 'end start'],
+        offset: ['start start', 'end end'], // Changed from 'end start' to 'end end'
     });
 
     const cardLength = content.length;
 
     useMotionValueEvent(scrollYProgress, 'change', (latest) => {
-        const cardsBreakpoints = content.map((_, index) => index / cardLength);
+        const cardsBreakpoints = content.map((_, index) => {
+            // Adjust the breakpoints to cover the full scroll range
+            const adjustedIndex = index + 0.5; // Add offset to better capture the card
+            return adjustedIndex / (cardLength + 1);
+        });
+
         const closestBreakpointIndex = cardsBreakpoints.reduce((acc, breakpoint, index) => {
             const distance = Math.abs(latest - breakpoint);
             if (distance < Math.abs(latest - cardsBreakpoints[acc])) {
@@ -50,7 +55,10 @@ export default function WhyChooseUsPage() {
             }
             return acc;
         }, 0);
-        setActiveCard(closestBreakpointIndex);
+        
+        // Ensure we don't go out of bounds
+        const newActiveCard = Math.min(closestBreakpointIndex, cardLength - 1);
+        setActiveCard(newActiveCard);
     });
 
     const backgroundColors = ['var(--slate-900)', 'var(--black)', 'var(--neutral-900)'];
@@ -112,7 +120,7 @@ export default function WhyChooseUsPage() {
                     <div className="div relative flex items-start px-4">
                         <div className="max-w-2xl">
                             {content.map((item, index) => (
-                                <div key={item.title + index} className="my-20">
+                                <div key={item.title + index} className="my-24"> {/* Increased vertical margin */}
                                     <motion.h2
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: activeCard === index ? 1 : 0.3 }}
@@ -129,7 +137,7 @@ export default function WhyChooseUsPage() {
                                     </motion.p>
                                 </div>
                             ))}
-                            <div className="h-40" />
+                            <div className="h-[60vh]" /> {/* Increased bottom padding */}
                         </div>
                     </div>
                     <div className="hidden lg:block h-60 w-80 rounded-md bg-white sticky top-10 overflow-hidden border border-gray-200">
