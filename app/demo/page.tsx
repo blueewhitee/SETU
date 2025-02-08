@@ -1,28 +1,69 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { cn } from "@/utils/cn";
+import { cn } from '@/utils/cn';
 
 export default function DemoPage() {
     const [message, setMessage] = useState('');
     const [chatHistory, setChatHistory] = useState([
-        { sender: 'ai', text: 'Hi! What topic would you like to learn about today?' }
+        { sender: 'ai', text: 'Hi! What topic would you like to learn about today?' },
     ]);
+    const [isZoomed, setIsZoomed] = useState(false);
+    const [attachment, setAttachment] = useState<File | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleSendMessage = () => {
-        if (!message.trim()) return;
-        
+    const handleSendMessage = useCallback(async () => {
+        if (!message.trim() && !attachment) return;
+
+        // Create FormData to handle both text and image
+        const formData = new FormData();
+        if (message) formData.append('message', message);
+        if (attachment) formData.append('image', attachment);
+
         // Add user message to chat
-        setChatHistory(prev => [...prev, { sender: 'user', text: message }]);
-        
-        // Simulate AI response
-        setTimeout(() => {
-            setChatHistory(prev => [...prev, { sender: 'ai', text: `Great! Let's talk about ${message}. Here's some information...` }]);
-        }, 1000);
+        setChatHistory(prev => [...prev, { 
+            sender: 'user', 
+            text: message,
+            ...(attachment && { image: URL.createObjectURL(attachment) })
+        }]);
 
-        // Clear input
-        setMessage('');
+        try {
+            const response = await fetch('/api/send-message', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.details || 'Failed to send message');
+            }
+
+            const data = await response.json();
+            
+            // Add AI response to chat
+            setChatHistory(prev => [
+                ...prev,
+                { sender: 'ai', text: data.response }
+            ]);
+
+        } catch (error) {
+            console.error('Full Error:', error);
+            setChatHistory(prev => [
+                ...prev,
+                {
+                    sender: 'ai',
+                    text: `Error: ${error instanceof Error ? error.message : 'Failed to send message'}`
+                }
+            ]);
+        } finally {
+            setMessage('');
+            setAttachment(null);
+        }
+    }, [message, attachment]);
+
+    const handleAttachmentClick = () => {
+        fileInputRef.current?.click();
     };
 
     return (
@@ -35,13 +76,22 @@ export default function DemoPage() {
                             <span className="text-2xl font-bold text-indigo-600">EduAI</span>
                         </div>
                         <div className="hidden sm:flex sm:space-x-8">
-                            <a href="/home" className="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium rounded-[3px]">
+                            <a
+                                href="/home"
+                                className="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium rounded-[3px]"
+                            >
                                 Home
                             </a>
-                            <a href="/demo" className="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium rounded-[3px]">
+                            <a
+                                href="/demo"
+                                className="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium rounded-[3px]"
+                            >
                                 Try Demo
                             </a>
-                            <a href="/why-choose-us" className="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium rounded-[3px]">
+                            <a
+                                href="/why-choose-us"
+                                className="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium rounded-[3px]"
+                            >
                                 Why Choose Us
                             </a>
                         </div>
@@ -50,10 +100,10 @@ export default function DemoPage() {
             </nav>
 
             {/* Demo Section */}
-            <section className="px-6 py-16">
-                <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-12">
-                    {/* Feature Description */}
-                    <div className="lg:w-1/3">
+            <section className="px-4 sm:px-6 py-8">
+                <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
+                    {/* Feature Description - Hidden on small screens */}
+                    <div className="hidden lg:block lg:w-1/3">
                         <h2 className="text-3xl font-bold text-indigo-800 mb-6">
                             Experience Learning via SMS
                         </h2>
@@ -86,40 +136,81 @@ export default function DemoPage() {
                     </div>
 
                     {/* Phone Demo */}
-                    <div className="lg:w-2/3">
-                        <div className="max-w-sm mx-auto bg-black rounded-[3rem] p-4 shadow-xl relative">
+                    <div className={cn(
+                        "w-full mx-auto",
+                        isZoomed ? "fixed inset-0 z-50 bg-white p-4" : "lg:w-2/3"
+                    )}>
+                        <div className={cn(
+                            "bg-black rounded-[3rem] p-4 shadow-xl relative",
+                            isZoomed ? "h-full w-full" : "max-w-sm mx-auto"
+                        )}>
+                            {/* Zoom Button */}
+                            <button
+                                onClick={() => setIsZoomed(!isZoomed)}
+                                className="absolute -top-4 -right-4 z-50 bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg hover:bg-indigo-700 transition-colors"
+                                aria-label={isZoomed ? "Minimize" : "Maximize"}
+                            >
+                                {isZoomed ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                    </svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M3 3a1 1 0 011-1h12a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V3z" />
+                                    </svg>
+                                )}
+                            </button>
+
                             {/* Dynamic Island */}
                             <div className="absolute top-4 left-1/2 transform -translate-x-1/2 w-24 h-8 bg-black rounded-full flex items-center justify-center space-x-1">
                                 <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
                                 <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
                                 <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
                             </div>
-                            
+
                             {/* Speaker */}
                             <div className="absolute top-4 left-1/2 transform -translate-x-1/2 w-16 h-1 bg-gray-800 rounded-full"></div>
-                            
+
                             {/* Screen Content */}
-                            <div className="bg-white rounded-[2.5rem] p-6 pt-10">
+                            <div className="bg-white rounded-[2.5rem] p-4 pt-10 h-full">
                                 {/* Chat Interface */}
-                                <div className="h-[500px] flex flex-col justify-end space-y-2 overflow-y-auto">
+                                <div className={cn(
+                                    "flex flex-col justify-end space-y-2 overflow-y-auto",
+                                    isZoomed ? "h-[calc(100vh-10rem)]" : "h-[500px]"
+                                )}>
                                     {chatHistory.map((msg, index) => (
                                         <div
                                             key={index}
-                                            className={`
-                                                p-3 rounded-lg max-w-[80%] text-sm
-                                                ${msg.sender === 'ai' 
+                                            className={cn(
+                                                "p-3 rounded-lg max-w-[80%] text-sm",
+                                                msg.sender === 'ai' 
                                                     ? 'bg-indigo-100 text-gray-700' 
                                                     : 'bg-gray-100 text-gray-700 ml-auto'
-                                                }
-                                            `}
+                                            )}
                                         >
                                             <p>{msg.text}</p>
                                         </div>
                                     ))}
                                 </div>
-                                
+
                                 {/* Input Area */}
-                                <div className="mt-4 flex gap-2">
+                                <div className="mt-4 flex gap-2 p-2">
+                                    <button
+                                        onClick={handleAttachmentClick}
+                                        className="p-2 text-indigo-600 hover:text-indigo-700"
+                                        aria-label="Attach file"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                        </svg>
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            onChange={(e) => setAttachment(e.target.files?.[0] || null)}
+                                            className="hidden"
+                                            accept="image/*"
+                                        />
+                                    </button>
                                     <input
                                         type="text"
                                         value={message}
@@ -136,7 +227,7 @@ export default function DemoPage() {
                                     </button>
                                 </div>
                             </div>
-                            
+
                             {/* Side Button */}
                             <div className="absolute right-0 top-24 h-20 w-1 bg-gray-800 rounded-l-full"></div>
                         </div>
@@ -145,4 +236,4 @@ export default function DemoPage() {
             </section>
         </div>
     );
-} 
+}
