@@ -76,9 +76,9 @@ export default function WhyChooseUsPage() {
     }, [activeCard]);
 
     return (
-        <div className={cn('min-h-screen bg-white', manrope.className)}>
-            {/* Navigation Bar */}
-            <nav className="bg-white shadow-sm">
+        <div className={cn('min-h-screen bg-white pt-16 lg:pt-0', manrope.className)}>
+            {/* Navigation Bar - Hidden on mobile */}
+            <nav className="hidden lg:block bg-white shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16 items-center">
                         <div className="flex-shrink-0">
@@ -111,10 +111,8 @@ export default function WhyChooseUsPage() {
             {/* Main Content */}
             <div className="min-h-[calc(100vh-4rem)] bg-white">
                 <motion.div
-                    animate={{
-                        backgroundColor: 'white',
-                    }}
-                    className="h-[calc(100vh-4rem)] overflow-y-auto flex justify-center relative space-x-10 rounded-md p-10"
+                    animate={{ backgroundColor: 'white' }}
+                    className="h-[calc(100vh-4rem)] overflow-y-auto flex flex-col lg:flex-row justify-center items-center lg:space-x-10 rounded-md p-4 lg:p-10"
                     ref={ref}
                 >
                     <div className="div relative flex items-start px-4">

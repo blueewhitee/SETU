@@ -73,9 +73,9 @@ export default function DemoPage() {
     };
 
     return (
-        <div className="min-h-screen bg-white">
-            {/* Navigation Bar */}
-            <nav className="bg-white shadow-sm">
+        <div className="min-h-screen bg-white pt-16 lg:pt-0">
+            {/* Navigation Bar - Hidden on mobile */}
+            <nav className="hidden lg:block bg-white shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16 items-center">
                         <div className="flex-shrink-0">
@@ -108,8 +108,8 @@ export default function DemoPage() {
             {/* Demo Section */}
             <section className="px-4 sm:px-6 py-8">
                 <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
-                    {/* Feature Description - Hidden on small screens */}
-                    <div className="hidden lg:block lg:w-1/3">
+                    {/* Feature Description - Visible on mobile */}
+                    <div className="lg:w-1/3">
                         <h2 className="text-3xl font-bold text-indigo-800 mb-6">
                             Experience Learning via SMS
                         </h2>
@@ -144,7 +144,7 @@ export default function DemoPage() {
                     {/* Phone Demo */}
                     <div className={cn(
                         "w-full mx-auto",
-                        isZoomed ? "fixed inset-0 z-50 bg-white p-4" : "lg:w-2/3"
+                        isZoomed ? "fixed inset-0 z-40 bg-white p-4" : "lg:w-2/3"
                     )}>
                         <div className={cn(
                             "bg-black rounded-[3rem] p-4 shadow-xl relative",
