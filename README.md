@@ -21,3 +21,4 @@ bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in Onlook to see the result.
+This is an innovative project where we are trying to figure out what true low resource means and how can we deliver it to others so that they also can be a part of the AI journey and become educated.
